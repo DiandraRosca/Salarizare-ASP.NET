@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Configuration;
-using System.Data;
 using Oracle.ManagedDataAccess.Client;
 using System.Web.UI;
 
@@ -35,15 +34,6 @@ namespace SalarizareApp
                 return;
             }
 
-            // Calculăm valorile necesare
-            decimal totalBrut = salariu * (1 + spor / 100) + premii;
-            decimal cas = totalBrut * 0.25M;
-            decimal cass = totalBrut * 0.10M;
-            decimal brutImpozabil = totalBrut - cas - cass; // Eliminat SANAT
-            decimal impozit = brutImpozabil * 0.10M;
-            decimal retineri = 0;
-            decimal viratCard = totalBrut - impozit - cas - cass - retineri;
-
             // Obține string-ul de conexiune din Web.config
             string connectionString = ConfigurationManager.ConnectionStrings["OracleDbContext"].ConnectionString;
 
@@ -52,12 +42,8 @@ namespace SalarizareApp
                 try
                 {
                     conn.Open();
-                    string query = @"INSERT INTO Angajati 
-                        (NUME, PRENUME, FUNCTIE, SALAR_BAZA, SPOR, PREMII_BRUTE, 
-                        TOTAL_BRUT, CAS, CASS, BRUT_IMPOZABIL, IMPOZIT, RETINERI, VIRAT_CARD) 
-                        VALUES 
-                        (:NUME, :PRENUME, :FUNCTIE, :SALAR_BAZA, :SPOR, :PREMII_BRUTE, 
-                        :TOTAL_BRUT, :CAS, :CASS, :BRUT_IMPOZABIL, :IMPOZIT, :RETINERI, :VIRAT_CARD)";
+                    string query = @"INSERT INTO Angajati (NUME, PRENUME, FUNCTIE, SALAR_BAZA, SPOR, PREMII_BRUTE) 
+                                     VALUES (:NUME, :PRENUME, :FUNCTIE, :SALAR_BAZA, :SPOR, :PREMII_BRUTE)";
 
                     using (OracleCommand cmd = new OracleCommand(query, conn))
                     {
@@ -68,19 +54,12 @@ namespace SalarizareApp
                         cmd.Parameters.Add(":SALAR_BAZA", OracleDbType.Decimal).Value = salariu;
                         cmd.Parameters.Add(":SPOR", OracleDbType.Decimal).Value = spor;
                         cmd.Parameters.Add(":PREMII_BRUTE", OracleDbType.Decimal).Value = premii;
-                        cmd.Parameters.Add(":TOTAL_BRUT", OracleDbType.Decimal).Value = totalBrut;
-                        cmd.Parameters.Add(":CAS", OracleDbType.Decimal).Value = cas;
-                        cmd.Parameters.Add(":CASS", OracleDbType.Decimal).Value = cass;
-                        cmd.Parameters.Add(":BRUT_IMPOZABIL", OracleDbType.Decimal).Value = brutImpozabil;
-                        cmd.Parameters.Add(":IMPOZIT", OracleDbType.Decimal).Value = impozit;
-                        cmd.Parameters.Add(":RETINERI", OracleDbType.Decimal).Value = retineri;
-                        cmd.Parameters.Add(":VIRAT_CARD", OracleDbType.Decimal).Value = viratCard;
 
                         cmd.ExecuteNonQuery();
                     }
 
                     // Afișează un mesaj de succes și resetează câmpurile
-                    Response.Write("<script>alert('Angajat adăugat cu succes!');</script>");
+                    Response.Write("<script>alert('Angajat adăugat cu succes! Calculul salariului s-a făcut automat!');</script>");
                     ClearFields();
                 }
                 catch (Exception ex)
